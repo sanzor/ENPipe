@@ -14,45 +14,49 @@ namespace Server
     {
         static async Task Main(string[] args)
         {
-            NamedPipeServerStream server = new NamedPipeServerStream("adiPipe",
+            NamedPipeServerStream server = new NamedPipeServerStream(
+                "adiPipe",
                 PipeDirection.InOut,
-                1,
-                PipeTransmissionMode.Byte
+                3,
+                PipeTransmissionMode.Message
                 );
             char[] buf = new char[1024];
             byte[] bytes = new byte[1024];
             await server.WaitForConnectionAsync();
-            //using (StreamReader reader = new StreamReader(server))
-            //{
-            //    using (StreamWriter writer = new StreamWriter(server))
-            //    {
-            try
+            using (StreamReader reader = new StreamReader(server))
             {
-                await server.FlushAsync();
-                while (true)
+                using (StreamWriter writer = new StreamWriter(server))
                 {
+                    try
+                    {
+                        
+                        while (true)
+                        {
 
-                    await server.WriteAsync("pop".ToBytes(), 0, "pop".Length);
-                    await server.FlushAsync();
+                            //await writer.WriteAsync("pop").ConfigureAwait(false);
 
-                    var read = await server.ReadAsync(bytes, 0, bytes.Length);
-                    var data = Encoding.UTF8.GetString(bytes, 0, read);
-                    File.AppendAllLines(@"D:/server",
-                        new string[] { $"Date:{DateTime.Now.ToString()}\tMessage:{data}" }
-                        );
-                    await Task.Delay(10000);
+                            await server.WriteAsync("pop".ToBytes(), 0, "pop".ToBytes().Length);
+                            
+                            //var read = await reader.ReadToEndAsync().ConfigureAwait(false);
+                            var read=await server.ReadAsync(bytes, 0, bytes.Length);
+                            // var data = Encoding.UTF8.GetString(bytes, 0, read);
+                            var data = Encoding.UTF8.GetString(bytes, 0, read);
+                            File.AppendAllLines(@"D:/server.txt",
+                                new string[] { $"Date:{DateTime.Now.ToString()}\tMessage:{data}" }
+                                );
+                            await Task.Delay(1000);
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                        throw;
+                    }
+
 
                 }
             }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
-
-            //    }
-            //}
         }
     }
 }

@@ -26,36 +26,38 @@ namespace Client
             char[] buf = new char[1024];
             byte[] bytes = new byte[1024];
 
-            //using (StreamReader reader = new StreamReader(client))
-            //{
-            //    using (StreamWriter writer = new StreamWriter(client))
-            //    {
-            try
+            using (StreamReader reader = new StreamReader(client))
             {
-                await client.ConnectAsync();
-                while (true)
+                using (StreamWriter writer = new StreamWriter(client))
                 {
-                    var read = await client.ReadAsync(bytes, 0, bytes.Length);
-                    var got = bytes.ToChars(read).FromChars(read);
-                    if (got != "pop")
+                    try
                     {
-                        continue;
+                        await client.ConnectAsync().ConfigureAwait(false);
+                        while (true)
+                        {
+                           // var got = await reader.ReadToEndAsync().ConfigureAwait(false);
+                            var read = await client.ReadAsync(bytes, 0, bytes.Length);
+                           var got = bytes.ToChars(read).FromChars(read);
+                            if (got != "pop")
+                            {
+                                continue;
+                            }
+                            form.ShowDialog();
+                            var message = state.WasClosed ? "close" : "delay";
+                            var tosend = message.ToBytes();
+                            await client.WriteAsync(tosend, 0, tosend.Length);
+                           // await writer.WriteAsync(message);
+
+                        }
                     }
-                    form.ShowDialog();
-                    var message = state.WasClosed ? "close" : "delay";
-                    var tosend = message.ToBytes();
-                    await client.WriteAsync(tosend, 0, tosend.Length);
-                    await client.FlushAsync();
+                    catch (Exception ex)
+                    {
+
+                        throw;
+                    }
+
                 }
             }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
-            //    }
-            //}
 
         }
     }
