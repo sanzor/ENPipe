@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.IO.Pipes;
 using Utils;
+using System.Diagnostics;
 
 namespace Client
 {
@@ -26,38 +27,35 @@ namespace Client
             char[] buf = new char[1024];
             byte[] bytes = new byte[1024];
 
-            using (StreamReader reader = new StreamReader(client))
+
+            try
             {
-                using (StreamWriter writer = new StreamWriter(client))
+                Debugger.Launch();
+                await client.ConnectAsync().ConfigureAwait(false);
+                while (true)
                 {
-                    try
+                    // var got = await reader.ReadToEndAsync().ConfigureAwait(false);
+                    var read = client.Read(bytes, 0, bytes.Length);
+                    var got = bytes.ToChars(read).FromChars(read);
+                    if (got != "pop")
                     {
-                        await client.ConnectAsync().ConfigureAwait(false);
-                        while (true)
-                        {
-                           // var got = await reader.ReadToEndAsync().ConfigureAwait(false);
-                            var read = await client.ReadAsync(bytes, 0, bytes.Length);
-                           var got = bytes.ToChars(read).FromChars(read);
-                            if (got != "pop")
-                            {
-                                continue;
-                            }
-                            form.ShowDialog();
-                            var message = state.WasClosed ? "close" : "delay";
-                            var tosend = message.ToBytes();
-                            await client.WriteAsync(tosend, 0, tosend.Length);
-                           // await writer.WriteAsync(message);
-
-                        }
+                        continue;
                     }
-                    catch (Exception ex)
-                    {
-
-                        throw;
-                    }
+                    
+                    form.ShowDialog();
+                    var message = state.WasClosed ? "close" : "delay";
+                    var tosend = message.ToBytes();
+                    client.Write(tosend, 0, tosend.Length);
+                    // await writer.WriteAsync(message);
 
                 }
             }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
 
         }
     }
